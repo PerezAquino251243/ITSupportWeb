@@ -10,6 +10,7 @@ import com.sofia.itsupport.repositories.AreaRepository;
 import com.sofia.itsupport.repositories.TicketRepository;
 import com.sofia.itsupport.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class UsuarioService {
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -53,11 +56,11 @@ public class UsuarioService {
                     .orElseThrow(() -> new RuntimeException("Área no encontrada"));
         }
 
-        // Crear usuario (sin encriptar contraseña aún - lo haremos con Security después)
+        // Crear usuario con contraseña hasheada
         Usuario usuario = new Usuario();
         usuario.setNombreUsuario(request.getNombreUsuario());
         usuario.setEmail(request.getEmail());
-        usuario.setContrasenaHash(request.getContrasena()); // Temporal, luego encriptaremos
+        usuario.setContrasenaHash(passwordEncoder.encode(request.getContrasena())); // ← HASHEADA
         usuario.setRol(request.getRol());
         usuario.setEstadoCuenta(EstadoCuenta.activo);
         usuario.setArea(area);

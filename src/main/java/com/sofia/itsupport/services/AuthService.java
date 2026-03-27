@@ -6,11 +6,14 @@ import com.sofia.itsupport.entities.Usuario;
 import com.sofia.itsupport.enums.EstadoCuenta;
 import com.sofia.itsupport.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
+    @Autowired
+    private PasswordEncoder passwordEncoder; // ← Inyectamos
 
     @Autowired
     private UsuarioRepository usuarioRepository;
@@ -19,17 +22,18 @@ public class AuthService {
     // LOGIN (temporal - sin encriptación)
     // ===========================================
     @Transactional(readOnly = true)
-    public LoginResponseDTO login(LoginRequest request) {
         // Buscar usuario por email
-        Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email o contraseña incorrectos"));
+        public LoginResponseDTO login(LoginRequest request) {
+            Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Email o contraseña incorrectos"));
 
-        // Validar contraseña (temporal, sin encriptar)
-        if (!usuario.getContrasenaHash().equals(request.getContrasena())) {
-            throw new RuntimeException("Email o contraseña incorrectos");
-        }
+            // Verificar la contraseña usando BCrypt
+            if (!passwordEncoder.matches(request.getContrasena(), usuario.getContrasenaHash())) {
+                throw new RuntimeException("Email o contraseña incorrectos");
+            }
 
-        // Validar estado de la cuenta
+
+            // Validar estado de la cuenta
         if (usuario.getEstadoCuenta() == EstadoCuenta.suspendido) {
             throw new RuntimeException("La cuenta está suspendida. Contacta al administrador.");
         }
